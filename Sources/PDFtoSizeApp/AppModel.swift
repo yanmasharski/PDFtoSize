@@ -36,9 +36,9 @@ struct InputFile: Identifiable {
     var outcome: Outcome? { if case .finished(let o) = phase { return o } else { return nil } }
 
     func add(_ urls: [URL]) {
-        for url in urls where url.pathExtension.lowercased() == "pdf" && !files.contains(where: { $0.url == url }) {
+        for url in urls where isSupportedInput(url) && !files.contains(where: { $0.url == url }) {
             let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            let pages = CGPDFDocument(url as CFURL)?.numberOfPages ?? 0
+            let pages = isPhotoFile(url) ? 1 : (CGPDFDocument(url as CFURL)?.numberOfPages ?? 0)
             files.append(InputFile(url: url, bytes: bytes, pages: pages))
         }
     }
@@ -83,3 +83,5 @@ func fileColor(_ index: Int) -> Color {
     let palette: [Color] = [.blue, .purple, .orange, .pink, .teal, .indigo, .yellow, .brown]
     return palette[index % palette.count]
 }
+
+private func isPhotoFile(_ url: URL) -> Bool { url.pathExtension.lowercased() != "pdf" }

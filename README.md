@@ -2,9 +2,9 @@
 
 # PDF to Size
 
-**Join your PDFs and shrink them to the exact size a website asks for.**
+**Join your PDFs and photos of documents, and shrink them to the exact size a website asks for.**
 
-You drop one or more PDF files, type a size (for example 1 MB), and press one button. PDF to Size joins the
+You drop PDF files and photos, type a size (for example 1 MB), and press one button. PDF to Size joins the
 files, looks at every page on its own, and finds the lightest way to keep each page readable. The result is
 a new file under your limit. Your originals are never changed. Everything happens on your Mac: your documents are never uploaded anywhere.
 
@@ -54,7 +54,9 @@ PDF to Size is that workflow in one window. Other tools may suit you better. Thi
 
 ## What it does
 
-- **Joins files.** Drop several PDFs; the order is the order in the list. You get one file.
+- **Joins files.** Drop several PDFs and photos; the order is the order in the list. You get one PDF.
+- **Takes photos.** JPEG, PNG, HEIC (iPhone), WebP, TIFF, BMP and GIF. Each photo becomes one page. The camera rotation
+  is applied, so a phone photo is not turned on its side.
 - **Hits the size.** You set the target. It builds the real file, measures it, and adjusts up to five times.
 - **Works page by page.** Pages that are already small stay as they were. Big scans get smaller pictures.
   The page that saves the most bytes for the least loss of quality is reduced first.
@@ -77,6 +79,7 @@ On my own papers (a 13-page contract, a passport, a residence permit; 14.8 MB in
   A colored page (a passport, a certificate) is never changed to gray or black and white unless it is nearly colorless.
 - **Pages are redrawn.** Text stays sharp, but links, bookmarks, form fields and digital signatures are not kept.
   A signed PDF will no longer be valid. Do not use it for files that must stay signed.
+- **A photo of a document is a picture.** It is not straightened or cropped. Take the photo straight, with even light.
 - **No text layer for scans.** A scan stays a picture; you cannot select or search its text. (OCR is planned, as an option.)
 - **Password-protected files** are refused.
 - **1 MB is 1,000,000 bytes**, the safe reading of a website limit.
@@ -150,7 +153,7 @@ swift build -c release
 ## Command line
 
 ```bash
-pdftosize [--target 1MB] [--strong] file.pdf [more.pdf ...]
+pdftosize [--target 1MB] [--strong] file.pdf photo.jpg [more ...]
 ```
 
 | Option | Meaning |
@@ -158,7 +161,7 @@ pdftosize [--target 1MB] [--strong] file.pdf [more.pdf ...]
 | `--target 1MB` | The size to reach. Accepts `MB`, `KB`, or a number of bytes. Default: 1 MB. |
 | `--strong` | Allow stronger compression: gray, black and white, lower resolution. |
 
-The result is saved next to the first file: `<name>-compressed.pdf` for one file, `merged-compressed.pdf` for
+A photo always becomes a PDF page, even when it is already small. The result is saved next to the first file: `<name>-compressed.pdf` for one file, `merged-compressed.pdf` for
 several. If the name exists, a number is added. The tool prints what it did to every page.
 
 ---

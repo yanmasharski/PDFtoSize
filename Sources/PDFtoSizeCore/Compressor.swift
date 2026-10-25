@@ -63,13 +63,14 @@ public enum Compressor {
         func outcome(_ status: Status, bytes: Int = 0, strong: Int? = nil, pages: [PageReport] = []) -> Outcome {
             Outcome(status: status, target: target, originalBytes: original, resultBytes: bytes, strongBytes: strong, pages: pages)
         }
-        if inputs.count == 1, original <= target { return outcome(.alreadyFits, bytes: original) }
+        if inputs.count == 1, !isPhoto(inputs[0]), original <= target { return outcome(.alreadyFits, bytes: original) }
 
         let refs = try pageRefs(inputs)
         progress(0, "Analyzing \(refs.count) pages…")
         let tiers: [Tier] = allowStrong ? [.safe, .strong] : [.safe]
         var candidates = gather(refs, tiers: tiers) { progress($0 * 0.8, "Analyzing pages…") }
 
+        if let i = candidates.firstIndex(where: \.isEmpty) { throw CompressError.cannotOpen(refs[i].url.lastPathComponent) }
         progress(0.8, "Fitting to the target…")
         var result = try fit(ladders(candidates), refs: refs, target: target)
 
@@ -84,7 +85,7 @@ public enum Compressor {
         }
 
         let chosen = result.best ?? result.smallest
-        if inputs.count == 1, chosen.data.count >= original { return outcome(.notSmaller, bytes: chosen.data.count) }
+        if inputs.count == 1, !isPhoto(inputs[0]), chosen.data.count >= original { return outcome(.notSmaller, bytes: chosen.data.count) }
         let url = outputURL(for: inputs)
         do { try chosen.data.write(to: url, options: .atomic) } catch { throw CompressError.cannotWrite(url.lastPathComponent) }
         progress(1, "Done")
@@ -188,7 +189,7 @@ private func gather(_ refs: [PageRef], tiers: [Tier], progress: (Double) -> Void
 
 private func candidates(for ref: PageRef, tier: Tier) -> [Candidate] {
     // Each worker opens its own document: CGPDFDocument is not shared between threads.
-    guard let doc = try? openPDF(ref.url), let page = doc.page(at: ref.number) else { return [] }
+    guard let page = try? openContent(ref) else { return [] }
     let size = page.outputSize
     let longPts = Double(max(size.width, size.height))
     var out: [Candidate] = []
@@ -197,8 +198,13 @@ private func candidates(for ref: PageRef, tier: Tier) -> [Candidate] {
     // The picture sizes to try. A scan starts at the size of its own image and shrinks by 20% steps,
     // never above it. A page without a big image starts at 220 A4 dpi.
     var native: Double?
-    if let img = largestImage(page), Double(img.width * img.height) >= 0.25 * Double(size.width * size.height) {
-        native = Double(max(img.width, img.height))
+    switch page {
+    case .pdf(_, let pdfPage):
+        if let img = largestImage(pdfPage), Double(img.width * img.height) >= 0.25 * Double(size.width * size.height) {
+            native = Double(max(img.width, img.height))
+        }
+    case .photo(let image):
+        native = Double(max(image.width, image.height))
     }
     var longSides: [Double] = []
     var side = native ?? 220 * a4LongSide
@@ -218,7 +224,8 @@ private func candidates(for ref: PageRef, tier: Tier) -> [Candidate] {
 
     func jpegCandidate(_ longSide: Double, _ quality: Double, gray: Bool) {
         guard let image = picture(longSide, gray: gray), let data = jpeg(image, quality: quality) else { return }
-        let method = "\(gray ? "Gray" : "Smaller picture"), \(Int(longSide)) px, quality \(Int(quality * 100))"
+        let what = gray ? "Gray" : (isPhoto(ref.url) ? "Photo" : "Smaller picture")
+        let method = "\(what), \(Int(longSide)) px, quality \(Int(quality * 100))"
         out.append(Candidate(piece: .jpeg(data, size), bytes: data.count,
                              loss: loss(longSide, (1 - quality) + (gray ? grayPenalty : 0)), method: method,
                              treatment: gray ? .gray : .smaller))
@@ -227,10 +234,14 @@ private func candidates(for ref: PageRef, tier: Tier) -> [Candidate] {
     switch tier {
     case .safe:
         let piece = Piece.vector(ref, size)
-        if let bytes = try? assemble([piece]).count {
+        // A photo has no "as it was" page: it is always a new picture.
+        if !isPhoto(ref.url), let bytes = try? assemble([piece]).count {
             out.append(Candidate(piece: piece, bytes: bytes, loss: 0, method: "Kept as it was", treatment: .kept))
         }
-        for l in longSides where l / a4LongSide >= safeMinDpi {
+        var sides = longSides.filter { $0 / a4LongSide >= safeMinDpi }
+        // A small photo is below the safe size already, but it must still become a page.
+        if sides.isEmpty, isPhoto(ref.url), let native { sides = [native] }
+        for l in sides {
             for q in [0.7, 0.5] { jpegCandidate(l, q, gray: false) }
         }
     case .strong:

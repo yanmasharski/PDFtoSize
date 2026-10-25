@@ -12,7 +12,7 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItemGroup {
-                Button("Add PDFs", systemImage: "plus", action: choose)
+                Button("Add Files", systemImage: "plus", action: choose)
                     .disabled(model.isWorking)
                 Button(action: model.run) {
                     Label("Compress to \(sizeText(model.targetBytes))", systemImage: "arrow.down.right.and.arrow.up.left")
@@ -35,10 +35,10 @@ struct ContentView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(.secondary)
             Text("Make your PDFs fit").font(.title2)
-            Text("Drop PDF files here. They are joined into one file and shrunk to the size you choose.\nYour originals are never changed.")
+            Text("Drop PDF files and photos here (iPhone, Android, scans). They are joined into one PDF and shrunk to the size you choose.\nYour originals are never changed.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-            Button("Add PDFs", action: choose)
+            Button("Add Files", action: choose)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
@@ -123,7 +123,7 @@ struct ContentView: View {
 
     private func choose() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.pdf]
+        panel.allowedContentTypes = [.pdf, .image]
         panel.allowsMultipleSelection = true
         if panel.runModal() == .OK { model.add(panel.urls) }
     }

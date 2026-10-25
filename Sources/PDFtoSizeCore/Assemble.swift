@@ -28,7 +28,7 @@ func assemble(_ pieces: [Piece]) throws -> Data {
         case .vector(let ref, let size):
             let doc = try docs[ref.url] ?? openPDF(ref.url)
             docs[ref.url] = doc
-            doc.page(at: ref.number)?.draw(in: ctx, size: size)
+            if let page = doc.page(at: ref.number) { Content.pdf(doc, page).draw(in: ctx, size: size) }
         case .jpeg(let data, _):
             // The JPEG-source initializer lets Quartz embed the bytes as they are, with no re-encode.
             if let provider = CGDataProvider(data: data as CFData),

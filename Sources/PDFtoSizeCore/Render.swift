@@ -3,7 +3,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-func render(_ page: CGPDFPage, dpi: Double, gray: Bool) -> CGImage? {
+func render(_ page: Content, dpi: Double, gray: Bool) -> CGImage? {
     let size = page.outputSize
     let scale = dpi / 72
     let w = max(1, Int((size.width * scale).rounded()))
@@ -30,7 +30,7 @@ func jpeg(_ image: CGImage, quality: Double) -> Data? {
 /// True when under 3% of the pixels have a visible tint. Cheap: one 50 dpi render, one pass over the bytes.
 /// Real contract scans measured 0.6-1.6% (blue ink, stamps), so the limit leaves room for them.
 /// A colored stamp or signature is lost in gray or black and white, which is why those need the user's consent.
-func isColorless(_ page: CGPDFPage) -> Bool {
+func isColorless(_ page: Content) -> Bool {
     guard let img = render(page, dpi: 50, gray: false),
           let data = img.dataProvider?.data,
           let p = CFDataGetBytePtr(data) else { return false }
