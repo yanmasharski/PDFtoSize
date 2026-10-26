@@ -102,7 +102,7 @@ struct ContentView: View {
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
             }
         case .missed(let url):
-            BannerView(systemImage: "exclamationmark.triangle.fill", tint: .orange, text: "Target missed. The smallest possible result is \(sizeText(o.resultBytes)); target \(sizeText(o.target)).") {
+            BannerView(systemImage: "exclamationmark.triangle.fill", tint: .orange, text: "Target missed. The smallest possible result is \(sizeText(o.resultBytes)); target \(sizeText(o.target)).\(o.pages.allSatisfy(\.alreadyCompact) ? " These files are already well compressed." : "")") {
                 Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
             }
         case .needsConsent:
@@ -112,7 +112,7 @@ struct ContentView: View {
         case .alreadyFits:
             BannerView(systemImage: "checkmark.circle", tint: .secondary, text: "This file already fits: \(sizeText(o.originalBytes)).")
         case .notSmaller:
-            BannerView(systemImage: "info.circle", tint: .secondary, text: "Compression would not make this file smaller. Nothing was written.")
+            BannerView(systemImage: "checkmark.seal.fill", tint: .green, text: "This file is already well compressed. Nothing smaller was found, so the original stays and nothing was written.")
         }
     }
 

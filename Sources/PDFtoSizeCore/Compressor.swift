@@ -20,7 +20,8 @@ public struct PageReport {
     public let treatment: Treatment
     public let method: String       // plain-language description
     public let bytes: Int           // size of this page in the result
-    public let originalBytes: Int   // size of this page before; the page redrawn as it was
+    public let originalBytes: Int   // size of this page before, as it was
+    public let alreadyCompact: Bool // no smaller version of this page was found
 
     public var source: String { "\(url.lastPathComponent) p.\(pageInFile)" }
 }
@@ -85,7 +86,7 @@ public enum Compressor {
         }
 
         let chosen = result.best ?? result.smallest
-        if inputs.count == 1, !isPhoto(inputs[0]), chosen.data.count >= original { return outcome(.notSmaller, bytes: chosen.data.count) }
+        if inputs.count == 1, !isPhoto(inputs[0]), chosen.data.count >= original || chosen.pages.allSatisfy({ $0.treatment == .kept }) { return outcome(.notSmaller, bytes: chosen.data.count) }
         let url = outputURL(for: inputs)
         do { try chosen.data.write(to: url, options: .atomic) } catch { throw CompressError.cannotWrite(url.lastPathComponent) }
         progress(1, "Done")
@@ -95,15 +96,20 @@ public enum Compressor {
 }
 
 /// Page sizes are measured one page at a time, so fonts and file overhead are counted per page.
-/// Scale them so "after" adds up to the real result and "before" adds up to the real input file.
+/// "Before" adds up to the real input file. A kept page is the same page, so "after" = "before".
+/// The pages that changed share the rest of the real result.
 func normalized(_ pages: [PageReport], resultBytes: Int, fileSizes: [URL: Int]) -> [PageReport] {
-    let afterSum = max(pages.reduce(0) { $0 + $1.bytes }, 1)
     var beforeSums: [URL: Int] = [:]
     for p in pages { beforeSums[p.url, default: 0] += p.originalBytes }
+    func before(_ p: PageReport) -> Int { (fileSizes[p.url] ?? 0) * p.originalBytes / max(beforeSums[p.url] ?? 1, 1) }
+    let keptBytes = pages.filter { $0.treatment == .kept }.reduce(0) { $0 + before($1) }
+    let changedSum = max(pages.filter { $0.treatment != .kept }.reduce(0) { $0 + $1.bytes }, 1)
+    let changedBudget = max(resultBytes - keptBytes, 0)
     return pages.map { p in
-        let before = (fileSizes[p.url] ?? 0) * p.originalBytes / max(beforeSums[p.url] ?? 1, 1)
+        let b = before(p)
         return PageReport(number: p.number, url: p.url, pageInFile: p.pageInFile, treatment: p.treatment, method: p.method,
-                          bytes: p.bytes * resultBytes / afterSum, originalBytes: before)
+                          bytes: p.treatment == .kept ? b : p.bytes * changedBudget / changedSum,
+                          originalBytes: b, alreadyCompact: p.alreadyCompact)
     }
 }
 
@@ -160,7 +166,8 @@ func fit(_ ladders: [[Candidate]], refs: [PageRef], target: Int) throws -> (best
         let data = try assemble(picked.map(\.piece))
         let pages = picked.enumerated().map { i, c in
             PageReport(number: i + 1, url: refs[i].url, pageInFile: refs[i].number, treatment: c.treatment,
-                       method: c.method, bytes: c.bytes, originalBytes: ladders[i][0].bytes)
+                       method: c.method, bytes: c.bytes, originalBytes: ladders[i][0].bytes,
+                       alreadyCompact: ladders[i].count == 1)
         }
         let f = Fit(data: data, pages: pages, loss: picked.reduce(0) { $0 + $1.loss })
         if smallest == nil || data.count < smallest!.data.count { smallest = f }

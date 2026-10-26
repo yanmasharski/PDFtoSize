@@ -26,7 +26,7 @@ struct SnapshotJob {
         _ = NSApplication.shared
         NSApp.appearance = NSAppearance(named: arguments.contains("--dark") ? .darkAqua : .aqua)
         let model = AppModel()
-        model.add(arguments.dropFirst().map { URL(fileURLWithPath: $0) })
+        model.add(arguments.dropFirst().filter { $0 != output }.map { URL(fileURLWithPath: $0) })
         if let target = value(after: "--target").flatMap(Double.init) { model.targetValue = target }
         if arguments.contains("--compress") {
             model.allowStrong = arguments.contains("--strong")

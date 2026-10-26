@@ -4,7 +4,7 @@ set -euo pipefail
 
 APP_NAME="PDFtoSize"
 BUNDLE_ID="io.github.yanmasharski.PDFtoSize"
-VERSION="0.2.0"
+VERSION="0.2.1"
 MIN_MACOS="14.0"
 
 cd "$(dirname "$0")/.."

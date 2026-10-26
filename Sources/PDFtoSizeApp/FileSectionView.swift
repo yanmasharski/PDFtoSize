@@ -22,6 +22,7 @@ struct FileSectionView: View {
                 Circle().fill(color).frame(width: 10, height: 10)
                 Text(file.url.lastPathComponent).font(.headline).lineLimit(1).truncationMode(.middle)
                 Text("\(file.pages)").foregroundStyle(.secondary)
+                if !pages.isEmpty, pages.allSatisfy(\.alreadyCompact) { pill("already compact", .green) }
                 Spacer()
                 if pages.isEmpty {
                     Text(sizeText(file.bytes)).monospacedDigit()
@@ -85,6 +86,7 @@ struct PageRowView: View {
                 HStack(spacing: 8) {
                     Text("Page \(page.pageInFile)")
                     badge
+                    if page.alreadyCompact { pill("already compact", .green) }
                 }
                 Text(page.method).font(.caption).foregroundStyle(.secondary)
             }
@@ -105,9 +107,10 @@ struct PageRowView: View {
         }
     }
 
-    private func pill(_ text: String, _ tint: Color) -> some View {
-        Text(text).font(.caption2.bold()).foregroundStyle(tint)
-            .padding(.horizontal, 6).padding(.vertical, 2)
-            .background(tint.opacity(0.15), in: Capsule())
-    }
+}
+
+func pill(_ text: String, _ tint: Color) -> some View {
+    Text(text).font(.caption2.bold()).foregroundStyle(tint)
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(tint.opacity(0.15), in: Capsule())
 }

@@ -34,14 +34,14 @@ if files.isEmpty { fail("usage: pdftosize [--target 1MB] [--strong] file.pdf [mo
 
 do {
     let outcome = try Compressor.run(inputs: files, target: target, allowStrong: strong)
-    for p in outcome.pages { print(String(format: "%3d  %-34@ %-26@ %@", p.number, p.source as NSString, p.method as NSString, fmt(p.bytes))) }
+    for p in outcome.pages { print(String(format: "%3d  %-34@ %-40@ %@", p.number, p.source as NSString, (p.method + (p.alreadyCompact ? " (already compact)" : "")) as NSString, fmt(p.bytes))) }
     let sizes = "\(fmt(outcome.originalBytes)) -> \(fmt(outcome.resultBytes)), target \(fmt(outcome.target))"
     switch outcome.status {
     case .done(let url): print("Target met: \(sizes)\n\(url.path)")
     case .missed(let url): print("Target missed: \(sizes)\n\(url.path)")
     case .needsConsent: print("Safe compression stops at \(fmt(outcome.resultBytes)), target \(fmt(outcome.target)). Stronger compression gets to \(fmt(outcome.strongBytes ?? 0)): add --strong.")
     case .alreadyFits: print("Already fits: \(sizes)")
-    case .notSmaller: print("Would not get smaller; original kept: \(sizes)")
+    case .notSmaller: print("Already well compressed: nothing smaller was found, so nothing was written. \(sizes)")
     }
 } catch {
     fail(error.localizedDescription)

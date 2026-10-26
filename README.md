@@ -63,7 +63,8 @@ PDF to Size is that workflow in one window. Other tools may suit you better. Thi
 - **Asks before it goes hard.** If gentle compression is not enough, it tells you how far stronger compression
   would get (for example "3.4 MB safe, 1.7 MB stronger") and waits for your yes.
   Stronger means: gray instead of color, lower resolution, black and white for text pages.
-- **Does not make things worse.** If the file already fits, or the result would be bigger, it writes nothing.
+- **Never makes a page bigger.** A page is replaced only by a smaller version. If nothing smaller exists, the original page is
+  kept and marked **already compact**. If a single file already fits, or is already as small as it gets, nothing is written.
 - **Shows what happened.** A Before bar and an After bar on the same scale, split by file. Open a file to see
   every page: what was done, and its size before and after.
 - **Is fast.** Pages are processed in parallel. 17 scanned pages take about two seconds.
@@ -77,7 +78,8 @@ On my own papers (a 13-page contract, a passport, a residence permit; 14.8 MB in
   especially after "stronger compression".
 - **Gray and black and white lose color.** Blue ink, stamps and colored logos turn gray or black.
   A colored page (a passport, a certificate) is never changed to gray or black and white unless it is nearly colorless.
-- **Pages are redrawn.** Text stays sharp, but links, bookmarks, form fields and digital signatures are not kept.
+- **Pages that change become pictures.** A page kept as it was is copied unchanged, so its text, links and form fields stay.
+  A page that is shrunk becomes a picture: links, bookmarks, form fields and digital signatures on it are lost.
   A signed PDF will no longer be valid. Do not use it for files that must stay signed.
 - **A photo of a document is a picture.** It is not straightened or cropped. Take the photo straight, with even light.
 - **No text layer for scans.** A scan stays a picture; you cannot select or search its text. (OCR is planned, as an option.)
